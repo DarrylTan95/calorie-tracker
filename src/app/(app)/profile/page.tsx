@@ -32,6 +32,10 @@ export default function ProfilePage() {
     setLoading(false);
   }, []);
 
+  // reload's setState calls run after an await, not synchronously in this
+  // effect body; reload is stable (empty-dep useCallback) so this can't
+  // cascade. Standard fetch-on-mount pattern the linter can't see through.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void reload(); }, [reload]);
 
   if (loading) {

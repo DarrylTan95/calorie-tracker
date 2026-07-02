@@ -28,8 +28,11 @@ export default function ProfileForm({
   const [draft, setDraft] = useState(DEFAULT_DRAFT);
   const [status, setStatus] = useState('');
 
+  // Syncs local edit state from the profile prop when a fresh fetch
+  // resolves; only fires on prop-reference change, not on its own setDraft.
   useEffect(() => {
     if (profile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDraft({
         name: profile.name,
         weightKg: String(profile.weightKg),
