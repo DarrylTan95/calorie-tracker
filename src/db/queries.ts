@@ -50,6 +50,7 @@ export async function getOverrides(db: DB): Promise<Overrides> {
 
 export async function saveOverrides(db: DB, overrides: Overrides, effectiveFrom: string): Promise<void> {
   const p = await getProfile(db);
-  const calculated = p ? calcTargets({ weightKg: p.weightKg, goal: p.goal }) : null;
+  if (!p) throw new Error('Cannot save target overrides before a profile exists');
+  const calculated = calcTargets({ weightKg: p.weightKg, goal: p.goal });
   await db.insert(schema.targets).values({ effectiveFrom, calculated, overrides });
 }

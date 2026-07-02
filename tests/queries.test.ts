@@ -53,4 +53,9 @@ describe('overrides', () => {
     await saveOverrides(db, { caloriesGym: 2000, protein: 180 }, '2026-07-02');
     expect(await getOverrides(db)).toEqual({ caloriesGym: 2000, protein: 180 });
   });
+
+  it('throws if no profile exists yet', async () => {
+    await expect(saveOverrides(db, { caloriesGym: 2000 }, '2026-07-02'))
+      .rejects.toThrow('Cannot save target overrides before a profile exists');
+  });
 });
