@@ -4,7 +4,7 @@ import { sessionOptions, type SessionData } from '@/lib/session-config';
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
   const session = await getIronSession<SessionData>(request, response, sessionOptions);
   const { pathname } = request.nextUrl;
