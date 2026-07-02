@@ -69,7 +69,7 @@ Bottom tab bar (mobile) / sidebar (desktop), dark theme carried over from the pr
 
 - Stats header: current weight, BMI, weight trend, goal.
 - Log today's weight (updates profile weight + recalculates targets, as in prototype).
-- Edit profile: name, weight, height, age, gender, goal (fat loss / maintain / muscle gain), gym days/week, experience level.
+- Edit profile: name, weight, height, age, gender, goal (fat loss / maintain / muscle gain), gym days/week, experience level (beginner / intermediate / advanced).
 - **Target overrides:** each metric (gym-day calories, rest-day calories, protein, carb range, fat range, water) shows its calculated value and can be pinned to a manual value; pinned values persist through recalculations until unpinned.
 - Current targets table (as in prototype), marking which values are overridden.
 
