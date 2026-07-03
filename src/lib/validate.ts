@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { OVERRIDE_KEYS } from './targets';
-import { MEAL_SLOTS } from './food';
+import { MEAL_SLOTS, type MealSlot } from './food';
 
 export const DateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD');
 
@@ -41,7 +41,7 @@ export const CreateFoodItemBody = z.object({
 
 export const AddDiaryEntryBody = z.object({
   date: DateString,
-  mealSlot: z.enum(MEAL_SLOTS as [string, ...string[]]),
+  mealSlot: z.enum(MEAL_SLOTS as [MealSlot, ...MealSlot[]]),
   foodItemId: z.number().int().positive().nullable(),
   name: z.string().min(1).max(100),
   portionMultiplier: z.number().min(0.1).max(10),
