@@ -7,6 +7,7 @@ import { sumEntries, type DiaryEntry } from '@/lib/food';
 import { todayLocalISO } from '@/lib/dates';
 import DaySummary from '@/components/today/DaySummary';
 import FoodLogger from '@/components/today/FoodLogger';
+import EntryList from '@/components/today/EntryList';
 
 export default function TodayPage() {
   const today = todayLocalISO();
@@ -66,6 +67,7 @@ export default function TodayPage() {
         onWaterChange={changeWater}
       />
       <FoodLogger onLogged={reload} />
+      <EntryList entries={entries} onDeleted={reload} />
     </div>
   );
 }
