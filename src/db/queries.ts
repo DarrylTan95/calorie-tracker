@@ -1,9 +1,10 @@
-import { and, desc, eq, ilike, isNotNull, max, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, ilike, isNotNull, lte, max, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import * as schema from './schema';
-import { calcTargets, type Goal, type Overrides } from '@/lib/targets';
+import { applyOverrides, calcTargets, type Goal, type Overrides } from '@/lib/targets';
 import type { RoutineDay, PerformedSet } from '@/lib/routine';
+import type { Recommendation } from '@/lib/review';
 
 export type DB = PostgresJsDatabase<typeof schema> | PgliteDatabase<typeof schema>;
 
@@ -279,4 +280,75 @@ export async function getLastSetsForExercise(db: DB, exerciseName: string): Prom
     .from(schema.setLogs)
     .where(and(eq(schema.setLogs.sessionId, latestSession[0].sessionId), eq(schema.setLogs.exerciseName, exerciseName)))
     .orderBy(schema.setLogs.setNumber);
+}
+
+export async function getDiaryEntriesRange(db: DB, fromDate: string, toDate: string): Promise<DiaryEntry[]> {
+  const rows = await db.select().from(schema.diaryEntries)
+    .where(and(gte(schema.diaryEntries.date, fromDate), lte(schema.diaryEntries.date, toDate)))
+    .orderBy(schema.diaryEntries.date, schema.diaryEntries.loggedAt);
+  return rows.map(toDiaryEntry);
+}
+
+export async function getDayLogsRange(db: DB, fromDate: string, toDate: string): Promise<DayLog[]> {
+  return db.select().from(schema.dayLog)
+    .where(and(gte(schema.dayLog.date, fromDate), lte(schema.dayLog.date, toDate)))
+    .orderBy(schema.dayLog.date);
+}
+
+export async function getWorkoutSessionsRange(db: DB, fromDate: string, toDate: string): Promise<WorkoutSession[]> {
+  return db.select().from(schema.workoutSessions)
+    .where(and(gte(schema.workoutSessions.date, fromDate), lte(schema.workoutSessions.date, toDate)))
+    .orderBy(schema.workoutSessions.date);
+}
+
+export interface WeeklyReview {
+  id: number;
+  weekStart: string;
+  weightTrendPercent: number | null;
+  calorieAdherencePercent: number;
+  proteinAdherencePercent: number;
+  workoutsCompleted: number;
+  workoutsPlanned: number;
+  recommendation: Recommendation;
+  applied: boolean;
+}
+
+function toWeeklyReview(row: typeof schema.weeklyReviews.$inferSelect): WeeklyReview {
+  const { createdAt: _createdAt, ...rest } = row;
+  return { ...rest, recommendation: row.recommendation as Recommendation };
+}
+
+export async function createWeeklyReview(
+  db: DB,
+  input: Omit<WeeklyReview, 'id' | 'applied'>,
+): Promise<WeeklyReview> {
+  const [row] = await db.insert(schema.weeklyReviews).values({ ...input, applied: false }).returning();
+  return toWeeklyReview(row);
+}
+
+export async function getLatestWeeklyReview(db: DB): Promise<WeeklyReview | null> {
+  const rows = await db.select().from(schema.weeklyReviews).orderBy(desc(schema.weeklyReviews.id)).limit(1);
+  return rows.length === 0 ? null : toWeeklyReview(rows[0]);
+}
+
+export async function applyWeeklyReviewRecommendation(db: DB, reviewId: number, effectiveFrom: string): Promise<void> {
+  const rows = await db.select().from(schema.weeklyReviews).where(eq(schema.weeklyReviews.id, reviewId));
+  if (rows.length === 0) throw new Error('Weekly review not found');
+  const review = toWeeklyReview(rows[0]);
+
+  if (review.recommendation.calorieAdjustment !== null) {
+    const profile = await getProfile(db);
+    if (!profile) throw new Error('Cannot apply a recommendation before a profile exists');
+    const calculated = calcTargets({ weightKg: profile.weightKg, goal: profile.goal });
+    const currentOverrides = await getOverrides(db);
+    const effective = applyOverrides(calculated, currentOverrides);
+    const delta = review.recommendation.calorieAdjustment;
+    await saveOverrides(db, {
+      ...currentOverrides,
+      caloriesGym: effective.caloriesGym + delta,
+      caloriesRest: effective.caloriesRest + delta,
+    }, effectiveFrom);
+  }
+
+  await db.update(schema.weeklyReviews).set({ applied: true }).where(eq(schema.weeklyReviews.id, reviewId));
 }
