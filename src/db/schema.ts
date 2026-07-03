@@ -58,3 +58,31 @@ export const dayLog = pgTable('day_log', {
   waterL: real('water_l').notNull().default(0),
   isGymDay: boolean('is_gym_day').notNull().default(true),
 });
+
+export const routines = pgTable('routines', {
+  id: serial('id').primaryKey(),
+  goal: text('goal', { enum: ['fat_loss', 'maintain', 'muscle_gain'] }).notNull(),
+  daysPerWeek: integer('days_per_week').notNull(),
+  experience: text('experience', { enum: ['beginner', 'intermediate', 'advanced'] }).notNull(),
+  days: jsonb('days').notNull(),
+  currentDayIndex: integer('current_day_index').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const workoutSessions = pgTable('workout_sessions', {
+  id: serial('id').primaryKey(),
+  date: date('date').notNull(),
+  routineDayLabel: text('routine_day_label').notNull(),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const setLogs = pgTable('set_logs', {
+  id: serial('id').primaryKey(),
+  sessionId: integer('session_id').notNull().references(() => workoutSessions.id),
+  exerciseName: text('exercise_name').notNull(),
+  setNumber: integer('set_number').notNull(),
+  reps: integer('reps').notNull(),
+  weightKg: real('weight_kg').notNull(),
+});
