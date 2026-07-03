@@ -60,3 +60,21 @@ export const DayLogPatchBody = z.object({
   waterL: z.number().min(0).max(10).optional(),
   isGymDay: z.boolean().optional(),
 });
+
+export const GenerateRoutineBody = z.object({
+  goal: z.enum(['fat_loss', 'maintain', 'muscle_gain']),
+  daysPerWeek: z.number().int().min(1).max(7),
+  experience: z.enum(['beginner', 'intermediate', 'advanced']),
+});
+
+export const LogWorkoutBody = z.object({
+  date: DateString,
+  routineDayLabel: z.string().min(1).max(50),
+  notes: z.string().max(500).optional(),
+  sets: z.array(z.object({
+    exerciseName: z.string().min(1).max(100),
+    setNumber: z.number().int().min(1).max(20),
+    reps: z.number().int().min(0).max(100),
+    weightKg: z.number().min(0).max(500),
+  })).min(1),
+});
