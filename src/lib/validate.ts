@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { OVERRIDE_KEYS } from './targets';
+import { MEAL_SLOTS } from './food';
 
 export const DateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD');
 
@@ -27,4 +28,35 @@ const overrideShape = Object.fromEntries(
 export const TargetsBody = z.object({
   overrides: z.object(overrideShape).strict(),
   effectiveFrom: DateString,
+});
+
+export const CreateFoodItemBody = z.object({
+  name: z.string().min(1).max(100),
+  portionLabel: z.string().min(1).max(50),
+  kcal: z.number().min(0).max(5000),
+  protein: z.number().min(0).max(500),
+  carbs: z.number().min(0).max(500),
+  fat: z.number().min(0).max(500),
+});
+
+export const AddDiaryEntryBody = z.object({
+  date: DateString,
+  mealSlot: z.enum(MEAL_SLOTS as [string, ...string[]]),
+  foodItemId: z.number().int().positive().nullable(),
+  name: z.string().min(1).max(100),
+  portionMultiplier: z.number().min(0.1).max(10),
+  calories: z.number().min(0).max(5000),
+  protein: z.number().min(0).max(500),
+  carbs: z.number().min(0).max(500),
+  fat: z.number().min(0).max(500),
+});
+
+export const SetFavoriteBody = z.object({
+  isFavorite: z.boolean(),
+});
+
+export const DayLogPatchBody = z.object({
+  date: DateString,
+  waterL: z.number().min(0).max(10).optional(),
+  isGymDay: z.boolean().optional(),
 });
