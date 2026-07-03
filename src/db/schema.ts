@@ -86,3 +86,16 @@ export const setLogs = pgTable('set_logs', {
   reps: integer('reps').notNull(),
   weightKg: real('weight_kg').notNull(),
 });
+
+export const weeklyReviews = pgTable('weekly_reviews', {
+  id: serial('id').primaryKey(),
+  weekStart: date('week_start').notNull(),
+  weightTrendPercent: real('weight_trend_percent'),
+  calorieAdherencePercent: real('calorie_adherence_percent').notNull(),
+  proteinAdherencePercent: real('protein_adherence_percent').notNull(),
+  workoutsCompleted: integer('workouts_completed').notNull(),
+  workoutsPlanned: integer('workouts_planned').notNull(),
+  recommendation: jsonb('recommendation').notNull(),
+  applied: boolean('applied').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
