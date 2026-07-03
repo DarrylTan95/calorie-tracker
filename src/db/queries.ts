@@ -1,8 +1,9 @@
-import { desc, eq, ilike, isNotNull, max, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, isNotNull, max, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import * as schema from './schema';
 import { calcTargets, type Goal, type Overrides } from '@/lib/targets';
+import type { RoutineDay, PerformedSet } from '@/lib/routine';
 
 export type DB = PostgresJsDatabase<typeof schema> | PgliteDatabase<typeof schema>;
 
@@ -193,4 +194,89 @@ export async function upsertDayLog(
   await db.insert(schema.dayLog).values(next)
     .onConflictDoUpdate({ target: schema.dayLog.date, set: { waterL: next.waterL, isGymDay: next.isGymDay } });
   return next;
+}
+
+export interface Routine {
+  id: number;
+  goal: Goal;
+  daysPerWeek: number;
+  experience: 'beginner' | 'intermediate' | 'advanced';
+  days: RoutineDay[];
+  currentDayIndex: number;
+  isActive: boolean;
+}
+
+function toRoutine(row: typeof schema.routines.$inferSelect): Routine {
+  const { createdAt: _createdAt, ...rest } = row;
+  return { ...rest, days: row.days as RoutineDay[] };
+}
+
+export async function getActiveRoutine(db: DB): Promise<Routine | null> {
+  const rows = await db.select().from(schema.routines)
+    .where(eq(schema.routines.isActive, true))
+    .orderBy(desc(schema.routines.id))
+    .limit(1);
+  return rows.length === 0 ? null : toRoutine(rows[0]);
+}
+
+export async function createRoutine(
+  db: DB,
+  input: { goal: Goal; daysPerWeek: number; experience: 'beginner' | 'intermediate' | 'advanced'; days: RoutineDay[] },
+): Promise<Routine> {
+  await db.update(schema.routines).set({ isActive: false }).where(eq(schema.routines.isActive, true));
+  const [row] = await db.insert(schema.routines)
+    .values({ ...input, currentDayIndex: 0, isActive: true })
+    .returning();
+  return toRoutine(row);
+}
+
+export async function advanceRoutineDay(db: DB, routineId: number): Promise<void> {
+  const rows = await db.select().from(schema.routines).where(eq(schema.routines.id, routineId));
+  if (rows.length === 0) return;
+  const days = rows[0].days as RoutineDay[];
+  const next = (rows[0].currentDayIndex + 1) % days.length;
+  await db.update(schema.routines).set({ currentDayIndex: next }).where(eq(schema.routines.id, routineId));
+}
+
+export interface WorkoutSession {
+  id: number;
+  date: string;
+  routineDayLabel: string;
+  notes: string | null;
+}
+
+export async function createWorkoutSession(
+  db: DB,
+  input: { date: string; routineDayLabel: string; notes?: string },
+): Promise<WorkoutSession> {
+  const [row] = await db.insert(schema.workoutSessions)
+    .values({ date: input.date, routineDayLabel: input.routineDayLabel, notes: input.notes ?? null })
+    .returning();
+  return row;
+}
+
+export async function addSetLogs(
+  db: DB,
+  sessionId: number,
+  sets: { exerciseName: string; setNumber: number; reps: number; weightKg: number }[],
+): Promise<void> {
+  if (sets.length === 0) return;
+  await db.insert(schema.setLogs).values(sets.map((s) => ({ ...s, sessionId })));
+}
+
+export async function getLastSetsForExercise(db: DB, exerciseName: string): Promise<PerformedSet[] | null> {
+  const latestSession = await db
+    .select({ sessionId: schema.setLogs.sessionId })
+    .from(schema.setLogs)
+    .innerJoin(schema.workoutSessions, eq(schema.setLogs.sessionId, schema.workoutSessions.id))
+    .where(eq(schema.setLogs.exerciseName, exerciseName))
+    .orderBy(desc(schema.workoutSessions.date), desc(schema.setLogs.sessionId))
+    .limit(1);
+
+  if (latestSession.length === 0) return null;
+
+  return db.select({ reps: schema.setLogs.reps, weightKg: schema.setLogs.weightKg })
+    .from(schema.setLogs)
+    .where(and(eq(schema.setLogs.sessionId, latestSession[0].sessionId), eq(schema.setLogs.exerciseName, exerciseName)))
+    .orderBy(schema.setLogs.setNumber);
 }
