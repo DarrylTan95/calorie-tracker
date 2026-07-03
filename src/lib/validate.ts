@@ -78,3 +78,11 @@ export const LogWorkoutBody = z.object({
     weightKg: z.number().min(0).max(500),
   })).min(1),
 });
+
+export const GenerateReviewBody = z.object({
+  today: DateString,
+});
+
+export const ApplyReviewBody = z.object({
+  effectiveFrom: DateString,
+});
