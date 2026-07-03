@@ -1,4 +1,4 @@
-import { pgTable, serial, text, real, integer, date, timestamp, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, real, integer, date, timestamp, jsonb, boolean } from 'drizzle-orm/pg-core';
 
 export const profile = pgTable('profile', {
   id: integer('id').primaryKey(),
@@ -24,4 +24,37 @@ export const targets = pgTable('targets', {
 export const weightLog = pgTable('weight_log', {
   date: date('date').primaryKey(),
   weightKg: real('weight_kg').notNull(),
+});
+
+export const foodItems = pgTable('food_items', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  portionLabel: text('portion_label').notNull(),
+  kcal: real('kcal').notNull(),
+  protein: real('protein').notNull(),
+  carbs: real('carbs').notNull(),
+  fat: real('fat').notNull(),
+  isCustom: boolean('is_custom').notNull().default(false),
+  isFavorite: boolean('is_favorite').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const diaryEntries = pgTable('diary_entries', {
+  id: serial('id').primaryKey(),
+  date: date('date').notNull(),
+  mealSlot: text('meal_slot', { enum: ['breakfast', 'lunch', 'dinner', 'snacks'] }).notNull(),
+  foodItemId: integer('food_item_id').references(() => foodItems.id),
+  name: text('name').notNull(),
+  portionMultiplier: real('portion_multiplier').notNull().default(1),
+  calories: real('calories').notNull(),
+  protein: real('protein').notNull(),
+  carbs: real('carbs').notNull(),
+  fat: real('fat').notNull(),
+  loggedAt: timestamp('logged_at').notNull().defaultNow(),
+});
+
+export const dayLog = pgTable('day_log', {
+  date: date('date').primaryKey(),
+  waterL: real('water_l').notNull().default(0),
+  isGymDay: boolean('is_gym_day').notNull().default(true),
 });

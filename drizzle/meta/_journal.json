@@ -8,6 +8,13 @@
       "when": 1782978595374,
       "tag": "0000_military_killmonger",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783059147575,
+      "tag": "0001_steep_colleen_wing",
+      "breakpoints": true
     }
   ]
 }
