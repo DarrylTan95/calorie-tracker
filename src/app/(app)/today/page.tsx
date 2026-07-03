@@ -6,6 +6,7 @@ import type { DayLog } from '@/db/queries';
 import { sumEntries, type DiaryEntry } from '@/lib/food';
 import { todayLocalISO } from '@/lib/dates';
 import DaySummary from '@/components/today/DaySummary';
+import FoodLogger from '@/components/today/FoodLogger';
 
 export default function TodayPage() {
   const today = todayLocalISO();
@@ -64,6 +65,7 @@ export default function TodayPage() {
         onToggleGymDay={toggleGymDay}
         onWaterChange={changeWater}
       />
+      <FoodLogger onLogged={reload} />
     </div>
   );
 }
