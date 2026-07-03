@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Profile, Routine } from '@/db/queries';
 import RoutineBuilder from '@/components/train/RoutineBuilder';
+import WeeklyRoutineView from '@/components/train/WeeklyRoutineView';
+import WorkoutChecklist from '@/components/train/WorkoutChecklist';
 
 export default function TrainPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -31,9 +33,13 @@ export default function TrainPage() {
     <div className="space-y-5 p-5">
       <h1 className="text-xl font-bold text-gray-50">Train</h1>
       {routine && !rebuilding ? (
-        <button onClick={() => setRebuilding(true)} className="text-xs text-gray-500 underline">
-          Rebuild routine
-        </button>
+        <>
+          <WorkoutChecklist routine={routine} onLogged={reload} />
+          <WeeklyRoutineView routine={routine} />
+          <button onClick={() => setRebuilding(true)} className="text-xs text-gray-500 underline">
+            Rebuild routine
+          </button>
+        </>
       ) : (
         <RoutineBuilder profile={profile} onBuilt={async () => { setRebuilding(false); await reload(); }} />
       )}
