@@ -64,6 +64,12 @@ export default function WeeklyReviewCard({
         </div>
       </div>
 
+      {review.narrative && (
+        <div className="mb-3 rounded-lg border border-blue-900/60 bg-blue-950/30 p-3 text-sm italic text-gray-300">
+          {review.narrative}
+        </div>
+      )}
+
       <div className={`rounded-lg border p-3 text-sm ${RECOMMENDATION_COLOR[review.recommendation.type]}`}>
         {review.recommendation.message}
       </div>
