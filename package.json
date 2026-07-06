@@ -13,6 +13,7 @@
     "db:seed": "tsx scripts/seed-food.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
     "drizzle-orm": "^0.45.2",
     "iron-session": "^8.0.4",
     "next": "^15.5.20",
