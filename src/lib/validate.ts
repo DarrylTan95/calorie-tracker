@@ -86,3 +86,7 @@ export const GenerateReviewBody = z.object({
 export const ApplyReviewBody = z.object({
   effectiveFrom: DateString,
 });
+
+export const ParseFoodBody = z.object({
+  text: z.string().min(1).max(2000),
+});
