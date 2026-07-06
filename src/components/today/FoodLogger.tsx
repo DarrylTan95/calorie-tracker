@@ -25,6 +25,15 @@ export default function FoodLogger({ onLogged }: { onLogged: () => Promise<void>
   const [showManual, setShowManual] = useState(false);
   const [manual, setManual] = useState({ name: '', kcal: '', protein: '', carbs: '', fat: '' });
   const [status, setStatus] = useState('');
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiText, setAiText] = useState('');
+  const [aiItems, setAiItems] = useState<{ name: string; portionLabel: string; calories: number; protein: number; carbs: number; fat: number }[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+
+  useEffect(() => {
+    fetch('/api/config').then((r) => r.json()).then((c) => setAiEnabled(!!c.aiEnabled));
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -127,6 +136,48 @@ export default function FoodLogger({ onLogged }: { onLogged: () => Promise<void>
     }
   }
 
+  async function parseWithAI() {
+    if (!aiText.trim()) return;
+    setAiLoading(true);
+    setAiError('');
+    const res = await fetch('/api/ai/parse-food', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: aiText }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setAiItems(data.items);
+    } else {
+      setAiError('Could not parse that — try rephrasing or log manually.');
+    }
+    setAiLoading(false);
+  }
+
+  async function logAiItem(item: { name: string; portionLabel: string; calories: number; protein: number; carbs: number; fat: number }) {
+    const created = await fetch('/api/food-items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: item.name, portionLabel: item.portionLabel,
+        kcal: item.calories, protein: item.protein, carbs: item.carbs, fat: item.fat,
+      }),
+    }).then((r) => r.json());
+
+    const res = await fetch('/api/diary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        date: todayLocalISO(), mealSlot, foodItemId: created.item.id, name: created.item.name,
+        portionMultiplier: 1, calories: item.calories, protein: item.protein, carbs: item.carbs, fat: item.fat,
+      }),
+    });
+    if (res.ok) {
+      setAiItems((prev) => prev.filter((i) => i !== item));
+      await onLogged();
+    }
+  }
+
   return (
     <div className="rounded-xl bg-gray-900 p-4">
       <div className="mb-2 text-[11px] uppercase tracking-wider text-gray-500">Log food</div>
@@ -203,6 +254,45 @@ export default function FoodLogger({ onLogged }: { onLogged: () => Promise<void>
       <button onClick={() => setShowManual((s) => !s)} className="text-xs text-gray-500 underline">
         {showManual ? 'Cancel manual entry' : "Can't find it? Enter manually"}
       </button>
+
+      {aiEnabled && (
+        <div className="mt-3 rounded-lg bg-gray-800 p-3">
+          <div className="mb-2 text-[11px] uppercase tracking-wider text-gray-500">Or describe what you ate</div>
+          <textarea
+            value={aiText}
+            onChange={(e) => setAiText(e.target.value)}
+            placeholder="e.g. chicken rice with drumstick, kopi o kosong"
+            rows={2}
+            className={`${inputCls} resize-none`}
+          />
+          <button
+            onClick={parseWithAI}
+            disabled={aiLoading || !aiText.trim()}
+            className="mt-2 w-full rounded-lg bg-blue-700 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {aiLoading ? 'Parsing…' : 'Parse with AI'}
+          </button>
+          {aiError && <p className="mt-2 text-xs text-red-400">{aiError}</p>}
+          {aiItems.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              {aiItems.map((item, i) => (
+                <div key={i} className="flex items-center justify-between rounded-lg bg-gray-900 px-3 py-2">
+                  <div>
+                    <div className="text-sm text-gray-200">{item.name}</div>
+                    <div className="text-[11px] text-gray-500">{item.portionLabel} · {Math.round(item.calories)} kcal</div>
+                  </div>
+                  <button
+                    onClick={() => logAiItem(item)}
+                    className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white"
+                  >
+                    Log
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {showManual && (
         <div className="mt-2 space-y-2 rounded-lg bg-gray-800 p-3">
