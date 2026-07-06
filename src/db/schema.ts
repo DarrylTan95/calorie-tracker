@@ -96,6 +96,7 @@ export const weeklyReviews = pgTable('weekly_reviews', {
   workoutsCompleted: integer('workouts_completed').notNull(),
   workoutsPlanned: integer('workouts_planned').notNull(),
   recommendation: jsonb('recommendation').notNull(),
+  narrative: text('narrative'),
   applied: boolean('applied').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });

@@ -9,6 +9,7 @@ import { sumEntries } from '@/lib/food';
 import { computeWeeklyReview, type DayAdherence } from '@/lib/review';
 import { applyOverrides, calcTargets } from '@/lib/targets';
 import { GenerateReviewBody } from '@/lib/validate';
+import { isAIEnabled, reviewNarrative } from '@/lib/ai';
 
 export async function GET() {
   return NextResponse.json({ review: await getLatestWeeklyReview(db) });
@@ -69,6 +70,23 @@ export async function POST(req: Request) {
     loggedDaysCount,
   });
 
+  let narrative: string | null = null;
+  if (isAIEnabled()) {
+    try {
+      narrative = await reviewNarrative({
+        weekStart,
+        weightTrendPercent: result.weightTrendPercent,
+        calorieAdherencePercent: result.calorieAdherencePercent,
+        proteinAdherencePercent: result.proteinAdherencePercent,
+        workoutsCompleted: sessions.length,
+        workoutsPlanned: activeRoutine?.daysPerWeek ?? 0,
+        recommendationMessage: result.recommendation.message,
+      });
+    } catch {
+      narrative = null;
+    }
+  }
+
   const review = await createWeeklyReview(db, {
     weekStart,
     weightTrendPercent: result.weightTrendPercent,
@@ -77,6 +95,7 @@ export async function POST(req: Request) {
     workoutsCompleted: sessions.length,
     workoutsPlanned: activeRoutine?.daysPerWeek ?? 0,
     recommendation: result.recommendation,
+    narrative,
   });
 
   return NextResponse.json({ review });

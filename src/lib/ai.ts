@@ -69,3 +69,28 @@ export async function parseFood(text: string): Promise<ParsedFoodItem[]> {
   const input = toolUse.input as { items?: ParsedFoodItem[] };
   return input.items ?? [];
 }
+
+export async function reviewNarrative(input: {
+  weekStart: string;
+  weightTrendPercent: number | null;
+  calorieAdherencePercent: number;
+  proteinAdherencePercent: number;
+  workoutsCompleted: number;
+  workoutsPlanned: number;
+  recommendationMessage: string;
+}): Promise<string> {
+  const client = getAnthropicClient();
+  const message = await client.messages.create({
+    model: AI_MODEL,
+    max_tokens: 200,
+    messages: [{
+      role: 'user',
+      content: `Write a short (2-3 sentence), specific, honest coach-style summary of this past week for a calorie-tracking app user. No generic filler, no greeting. Data: weight trend ${input.weightTrendPercent === null ? 'no data' : `${input.weightTrendPercent.toFixed(2)}%/week`}, calorie adherence ${input.calorieAdherencePercent}%, protein adherence ${input.proteinAdherencePercent}%, workouts ${input.workoutsCompleted}/${input.workoutsPlanned}, current rule-based recommendation: "${input.recommendationMessage}".`,
+    }],
+  });
+
+  const textBlock = message.content.find(
+    (block): block is Anthropic.Messages.TextBlock => block.type === 'text',
+  );
+  return textBlock?.text ?? '';
+}

@@ -310,6 +310,7 @@ export interface WeeklyReview {
   workoutsCompleted: number;
   workoutsPlanned: number;
   recommendation: Recommendation;
+  narrative: string | null;
   applied: boolean;
 }
 

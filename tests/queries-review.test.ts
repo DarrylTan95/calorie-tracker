@@ -52,11 +52,11 @@ describe('weekly reviews', () => {
   it('creates and retrieves the latest weekly review', async () => {
     await createWeeklyReview(db, {
       weekStart: '2026-06-22', weightTrendPercent: -0.5, calorieAdherencePercent: 90,
-      proteinAdherencePercent: 85, workoutsCompleted: 3, workoutsPlanned: 4, recommendation: RECOMMENDATION,
+      proteinAdherencePercent: 85, workoutsCompleted: 3, workoutsPlanned: 4, recommendation: RECOMMENDATION, narrative: null,
     });
     await createWeeklyReview(db, {
       weekStart: '2026-06-29', weightTrendPercent: -0.3, calorieAdherencePercent: 95,
-      proteinAdherencePercent: 90, workoutsCompleted: 4, workoutsPlanned: 4, recommendation: RECOMMENDATION,
+      proteinAdherencePercent: 90, workoutsCompleted: 4, workoutsPlanned: 4, recommendation: RECOMMENDATION, narrative: null,
     });
     const latest = await getLatestWeeklyReview(db);
     expect(latest?.weekStart).toBe('2026-06-29');
@@ -67,7 +67,7 @@ describe('weekly reviews', () => {
     await saveProfile(db, BASE_PROFILE);
     const review = await createWeeklyReview(db, {
       weekStart: '2026-06-29', weightTrendPercent: 0, calorieAdherencePercent: 90,
-      proteinAdherencePercent: 90, workoutsCompleted: 4, workoutsPlanned: 4, recommendation: RECOMMENDATION,
+      proteinAdherencePercent: 90, workoutsCompleted: 4, workoutsPlanned: 4, recommendation: RECOMMENDATION, narrative: null,
     });
     await applyWeeklyReviewRecommendation(db, review.id, '2026-07-06');
     expect((await getLatestWeeklyReview(db))?.applied).toBe(true);
@@ -79,7 +79,7 @@ describe('weekly reviews', () => {
     const review = await createWeeklyReview(db, {
       weekStart: '2026-06-29', weightTrendPercent: -0.1, calorieAdherencePercent: 90,
       proteinAdherencePercent: 90, workoutsCompleted: 4, workoutsPlanned: 4,
-      recommendation: { type: 'decrease_calories', message: 'Cut a bit', calorieAdjustment: -125 },
+      recommendation: { type: 'decrease_calories', message: 'Cut a bit', calorieAdjustment: -125 }, narrative: null,
     });
     await applyWeeklyReviewRecommendation(db, review.id, '2026-07-06');
     const overrides = await getOverrides(db);
@@ -92,7 +92,7 @@ describe('weekly reviews', () => {
     const review = await createWeeklyReview(db, {
       weekStart: '2026-06-29', weightTrendPercent: -0.1, calorieAdherencePercent: 90,
       proteinAdherencePercent: 90, workoutsCompleted: 4, workoutsPlanned: 4,
-      recommendation: { type: 'decrease_calories', message: 'Cut a bit', calorieAdjustment: -125 },
+      recommendation: { type: 'decrease_calories', message: 'Cut a bit', calorieAdjustment: -125 }, narrative: null,
     });
     await expect(applyWeeklyReviewRecommendation(db, review.id, '2026-07-06')).rejects.toThrow();
   });
