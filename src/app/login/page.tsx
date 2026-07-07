@@ -19,7 +19,7 @@ export default function LoginPage() {
       body: JSON.stringify({ password }),
     }).catch(() => null);
     if (res?.ok) {
-      router.push('/profile');
+      router.push('/today');
       router.refresh();
     } else {
       setError('Wrong password');
